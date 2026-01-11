@@ -24,22 +24,23 @@ class TestCanonicalString:
     """Tests for canonical string generation."""
 
     def test_basic_canonical_string(self) -> None:
-        """Basic canonical string format."""
+        """Basic canonical string format - matches TypeScript implementation."""
         canonical = compute_canonical_string(
             ticket_id="FIN-1234",
             approver="ciso@corp.com",
             timestamp="2025-01-15T10:30:00Z",
         )
-        assert canonical == "FIN-1234 | ciso@corp.com | 2025-01-15T10:30:00Z"
+        # Format: approved_at={ts}|approved_by={email}|ticket_id={id} (sorted alphabetically)
+        assert canonical == "approved_at=2025-01-15T10:30:00Z|approved_by=ciso@corp.com|ticket_id=FIN-1234"
 
     def test_canonical_string_with_spaces(self) -> None:
-        """Canonical string preserves spaces."""
+        """Canonical string preserves spaces in values."""
         canonical = compute_canonical_string(
             ticket_id="FIN 1234",
             approver="John Doe <john@corp.com>",
             timestamp="2025-01-15T10:30:00Z",
         )
-        assert canonical == "FIN 1234 | John Doe <john@corp.com> | 2025-01-15T10:30:00Z"
+        assert canonical == "approved_at=2025-01-15T10:30:00Z|approved_by=John Doe <john@corp.com>|ticket_id=FIN 1234"
 
 
 class TestApprovalHash:
@@ -47,10 +48,10 @@ class TestApprovalHash:
 
     def test_spec_test_vector(self) -> None:
         """
-        Test vector from specification.
+        Test vector matching TypeScript implementation.
 
-        Input: "FIN-1234 | ciso@corp.com | 2025-01-15T10:30:00Z"
-        Expected: "sha256:7d865e959b2466918c9863afca942d0fb89d7c9ac0c99bafc3749504ded97730"
+        Canonical: "approved_at=2025-01-15T10:30:00Z|approved_by=ciso@corp.com|ticket_id=FIN-1234"
+        Expected: "sha256:bb085280036c278a6478b90f67d09cfcb6bcc7484d13229d7eba509bdb4685f7"
         """
         canonical = compute_canonical_string(
             ticket_id="FIN-1234",
@@ -58,7 +59,7 @@ class TestApprovalHash:
             timestamp="2025-01-15T10:30:00Z",
         )
         hash_result = compute_approval_hash(canonical)
-        expected = "sha256:7d865e959b2466918c9863afca942d0fb89d7c9ac0c99bafc3749504ded97730"
+        expected = "sha256:bb085280036c278a6478b90f67d09cfcb6bcc7484d13229d7eba509bdb4685f7"
         assert hash_result == expected
 
     def test_different_inputs_different_hashes(self) -> None:
@@ -84,7 +85,7 @@ class TestApprovalHashVerification:
             ticket_id="FIN-1234",
             approver="ciso@corp.com",
             timestamp="2025-01-15T10:30:00Z",
-            expected_hash="sha256:7d865e959b2466918c9863afca942d0fb89d7c9ac0c99bafc3749504ded97730",
+            expected_hash="sha256:bb085280036c278a6478b90f67d09cfcb6bcc7484d13229d7eba509bdb4685f7",
         )
         assert result is True
 
@@ -100,8 +101,8 @@ class TestApprovalHashVerification:
 
     def test_modified_input_fails(self) -> None:
         """Modified input fails verification."""
-        # Original hash
-        original_hash = "sha256:7d865e959b2466918c9863afca942d0fb89d7c9ac0c99bafc3749504ded97730"
+        # Original hash for FIN-1234
+        original_hash = "sha256:bb085280036c278a6478b90f67d09cfcb6bcc7484d13229d7eba509bdb4685f7"
 
         # Modified ticket ID
         result = verify_approval_hash(
@@ -135,7 +136,7 @@ class TestAssetCardHash:
         from aigrc.schemas import RiskFactors
 
         card2 = AssetCard(
-            id="aigrc-2024-different",
+            id="aigrc-2024-b2c3d4e5",  # Must be hex: aigrc-YYYY-XXXXXXXX
             name="Different Agent",
             version="2.0.0",
             owner=sample_owner,

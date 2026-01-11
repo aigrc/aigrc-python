@@ -58,7 +58,7 @@ def sample_asset_card(
 ) -> AssetCard:
     """Sample asset card for testing."""
     return AssetCard(
-        id="aigrc-2024-test0001",
+        id="aigrc-2024-a1b2c3d4",  # Must be hex: aigrc-YYYY-XXXXXXXX
         name="Test Agent",
         version="1.0.0",
         description="A test agent for unit testing",

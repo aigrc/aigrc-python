@@ -22,7 +22,9 @@ def compute_canonical_string(
     """
     Compute canonical string for Golden Thread approval.
 
-    Format: "{ticket_id} | {approver} | {timestamp}"
+    MUST match TypeScript implementation for cross-language compatibility.
+    Format: "approved_at={timestamp}|approved_by={email}|ticket_id={id}"
+    Fields are sorted alphabetically with pipe delimiters (no spaces).
 
     Args:
         ticket_id: External ticket/approval ID
@@ -34,9 +36,45 @@ def compute_canonical_string(
 
     Example:
         >>> compute_canonical_string("FIN-1234", "ciso@corp.com", "2025-01-15T10:30:00Z")
-        'FIN-1234 | ciso@corp.com | 2025-01-15T10:30:00Z'
+        'approved_at=2025-01-15T10:30:00Z|approved_by=ciso@corp.com|ticket_id=FIN-1234'
     """
-    return f"{ticket_id} | {approver} | {timestamp}"
+    # Normalize timestamp - remove milliseconds if present
+    normalized_ts = _normalize_timestamp(timestamp)
+
+    # Build key-value pairs sorted alphabetically by key
+    # (approved_at, approved_by, ticket_id)
+    return f"approved_at={normalized_ts}|approved_by={approver}|ticket_id={ticket_id}"
+
+
+def _normalize_timestamp(timestamp: str) -> str:
+    """
+    Normalize timestamp to UTC ISO 8601 format without milliseconds.
+
+    Args:
+        timestamp: ISO 8601 timestamp string
+
+    Returns:
+        Normalized timestamp ending with Z
+    """
+    from datetime import datetime
+
+    # Parse various timestamp formats
+    for fmt in [
+        "%Y-%m-%dT%H:%M:%S.%fZ",
+        "%Y-%m-%dT%H:%M:%SZ",
+        "%Y-%m-%dT%H:%M:%S.%f%z",
+        "%Y-%m-%dT%H:%M:%S%z",
+    ]:
+        try:
+            dt = datetime.strptime(timestamp, fmt)
+            # Return without milliseconds
+            return dt.strftime("%Y-%m-%dT%H:%M:%SZ")
+        except ValueError:
+            continue
+
+    # If parsing fails, return as-is (let hash be computed)
+    # This matches TypeScript behavior where invalid timestamps are passed through
+    return timestamp
 
 
 def compute_approval_hash(canonical: str) -> str:
@@ -49,8 +87,8 @@ def compute_approval_hash(canonical: str) -> str:
     Returns:
         Hash in format "sha256:XXXX..."
 
-    Test vector:
-        Input: "FIN-1234 | ciso@corp.com | 2025-01-15T10:30:00Z"
+    Test vector (matching TypeScript):
+        Input: "approved_at=2025-01-15T10:30:00Z|approved_by=ciso@corp.com|ticket_id=FIN-1234"
         Output: "sha256:7d865e959b2466918c9863afca942d0fb89d7c9ac0c99bafc3749504ded97730"
     """
     hash_bytes = hashlib.sha256(canonical.encode("utf-8")).hexdigest()

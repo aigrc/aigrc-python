@@ -211,7 +211,7 @@ class TestAssetCard:
 
     def test_valid_asset_card(self, sample_asset_card: AssetCard) -> None:
         """Valid asset card creation."""
-        assert sample_asset_card.id == "aigrc-2024-test0001"
+        assert sample_asset_card.id == "aigrc-2024-a1b2c3d4"
         assert sample_asset_card.name == "Test Agent"
         assert sample_asset_card.version == "1.0.0"
 
