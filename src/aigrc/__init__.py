@@ -35,6 +35,16 @@ from aigrc.asset_card import (
     save_asset_card,
     find_asset_cards,
 )
+from aigrc.detection import (
+    Detection,
+    DetectionConfidence,
+    FrameworkCategory,
+    FrameworkType,
+    PatternRegistry,
+    ScanResult,
+    Scanner,
+    suggest_asset_card,
+)
 
 __version__ = "0.1.0"
 
@@ -63,4 +73,13 @@ __all__ = [
     "load_asset_card",
     "save_asset_card",
     "find_asset_cards",
+    # Detection Engine
+    "Scanner",
+    "ScanResult",
+    "Detection",
+    "DetectionConfidence",
+    "FrameworkType",
+    "FrameworkCategory",
+    "PatternRegistry",
+    "suggest_asset_card",
 ]
